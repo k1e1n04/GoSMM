@@ -33,7 +33,6 @@ To get started, you can install `GoSMM` using go get:
         User:          os.Getenv("DB_USER"),
         Password:      os.Getenv("DB_PASSWORD"),
         DBName:        os.Getenv("DB_NAME"),
-        MigrationsDir: os.Getenv("MIGRATIONS_DIR"),
     }
     ```
 
@@ -54,7 +53,7 @@ To perform migrations, use the Migrate function:
     if err != nil {
         log.Fatalf("Connection failed: %v", err)
     }
-    err := gosmm.Migrate(db, config)
+    err := GoSMM.Migrate(db, os.Getenv("MIGRATIONS_DIR"))
     if err != nil {
         log.Fatalf("Migration failed: %v", err)
     }
