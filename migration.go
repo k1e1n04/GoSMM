@@ -138,6 +138,10 @@ func Migrate(config DBConfig) error {
 			continue // skip already executed migrations
 		}
 
+		if !shouldExecute && filename > lastSuccessfulMigrationFile {
+			shouldExecute = true
+		}
+
 		if shouldExecute {
 
 			installedRank++
@@ -186,10 +190,6 @@ func Migrate(config DBConfig) error {
 
 			if !success {
 				return fmt.Errorf("Migration failed for file: %s", filename)
-			}
-		} else {
-			if filename == lastSuccessfulMigrationFile {
-				shouldExecute = true // Start executing from the next file
 			}
 		}
 	}
