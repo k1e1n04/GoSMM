@@ -11,7 +11,7 @@ import (
 )
 
 // checkMigrationIntegrity checks the migration history table for inconsistencies
-func checkMigrationIntegrity(db *sql.DB, config DBConfig) error {
+func checkMigrationIntegrity(db *sql.DB, migrationsDir string) error {
 	// Load executed migrations from the history table
 	executedMigrations := make(map[string]bool)
 	rows, err := db.Query(`SELECT filename FROM gosmm_migration_history WHERE success = TRUE`)
@@ -29,7 +29,7 @@ func checkMigrationIntegrity(db *sql.DB, config DBConfig) error {
 	}
 
 	// Read all SQL files from the migration directory
-	files, err := ioutil.ReadDir(config.MigrationsDir)
+	files, err := ioutil.ReadDir(migrationsDir)
 	if err != nil {
 		return err
 	}
@@ -54,13 +54,13 @@ func checkMigrationIntegrity(db *sql.DB, config DBConfig) error {
 }
 
 // Migrate executes the SQL migrations in the given directory
-func Migrate(db *sql.DB, config DBConfig) error {
+func Migrate(db *sql.DB, migrationsDir string) error {
 	err := createHistoryTable(db)
 	if err != nil {
 		return err
 	}
 
-	err = checkMigrationIntegrity(db, config)
+	err = checkMigrationIntegrity(db, migrationsDir)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func Migrate(db *sql.DB, config DBConfig) error {
 	}
 
 	// Read all SQL files from the migration directory
-	files, err := ioutil.ReadDir(config.MigrationsDir)
+	files, err := ioutil.ReadDir(migrationsDir)
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func Migrate(db *sql.DB, config DBConfig) error {
 			startTime := time.Now()
 
 			// Read and execute the SQL file
-			data, err := ioutil.ReadFile(filepath.Join(config.MigrationsDir, filename))
+			data, err := ioutil.ReadFile(filepath.Join(migrationsDir, filename))
 			if err != nil {
 				return err
 			}

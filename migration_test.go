@@ -26,26 +26,18 @@ func TestCheckMigrationIntegrity(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	defer teardown()
 
-	config := DBConfig{
-		Driver:        "sqlite3",
-		Host:          "localhost",
-		Port:          3306,
-		User:          "root",
-		Password:      "password",
-		DBName:        "test_db",
-		MigrationsDir: "./test_migrations",
-	}
+	migrationsDir := "./test_migrations"
 
 	// Create test_migrations directory if it doesn't exist
-	if _, err := os.Stat(config.MigrationsDir); os.IsNotExist(err) {
-		err := os.Mkdir(config.MigrationsDir, 0755)
+	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
+		err := os.Mkdir(migrationsDir, 0755)
 		if err != nil {
 			t.Fatalf("Failed to create test_migrations directory: %v", err)
 		}
 	}
 
 	// Create a test migration file in the test_migrations directory
-	testMigrationFile := filepath.Join(config.MigrationsDir, "v20230101_create_test_data_00001.sql")
+	testMigrationFile := filepath.Join(migrationsDir, "v20230101_create_test_data_00001.sql")
 	if err := ioutil.WriteFile(testMigrationFile, []byte("CREATE TABLE test_table (id INTEGER);"), 0644); err != nil {
 		t.Fatalf("Failed to create test migration file: %v", err)
 	}
@@ -62,7 +54,7 @@ func TestCheckMigrationIntegrity(t *testing.T) {
 		t.Fatalf("Failed to create gosmm_migration_history table: %v", err)
 	}
 
-	err = checkMigrationIntegrity(db, config)
+	err = checkMigrationIntegrity(db, migrationsDir)
 	assert.NoError(t, err)
 
 	// Delete the test migration file
@@ -75,19 +67,11 @@ func TestCheckMigrationIntegrityWithMissingMigrationFile(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	defer teardown()
 
-	config := DBConfig{
-		Driver:        "sqlite3",
-		Host:          "localhost",
-		Port:          3306,
-		User:          "root",
-		Password:      "password",
-		DBName:        "test_db",
-		MigrationsDir: "./test_migrations",
-	}
+	migrationsDir := "./test_migrations"
 
 	// Create test_migrations directory if it doesn't exist
-	if _, err := os.Stat(config.MigrationsDir); os.IsNotExist(err) {
-		err := os.Mkdir(config.MigrationsDir, 0755)
+	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
+		err := os.Mkdir(migrationsDir, 0755)
 		if err != nil {
 			t.Fatalf("Failed to create test_migrations directory: %v", err)
 		}
@@ -118,7 +102,7 @@ func TestCheckMigrationIntegrityWithMissingMigrationFile(t *testing.T) {
 		t.Fatalf("Failed to insert gosmm_migration_history entry: %v", err)
 	}
 
-	err = checkMigrationIntegrity(db, config)
+	err = checkMigrationIntegrity(db, migrationsDir)
 	assert.Error(t, err)
 }
 
@@ -126,26 +110,18 @@ func TestCheckMigrationIntegrityWithInvalidExtentionFile(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	defer teardown()
 
-	config := DBConfig{
-		Driver:        "sqlite3",
-		Host:          "localhost",
-		Port:          3306,
-		User:          "root",
-		Password:      "password",
-		DBName:        "test_db",
-		MigrationsDir: "./test_migrations",
-	}
+	migrationsDir := "./test_migrations"
 
 	// Create test_migrations directory if it doesn't exist
-	if _, err := os.Stat(config.MigrationsDir); os.IsNotExist(err) {
-		err := os.Mkdir(config.MigrationsDir, 0755)
+	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
+		err := os.Mkdir(migrationsDir, 0755)
 		if err != nil {
 			t.Fatalf("Failed to create test_migrations directory: %v", err)
 		}
 	}
 
 	// Create a test migration file in the test_migrations directory
-	testMigrationFile := filepath.Join(config.MigrationsDir, "v20230101_create_test_data_00001.txt")
+	testMigrationFile := filepath.Join(migrationsDir, "v20230101_create_test_data_00001.txt")
 	if err := ioutil.WriteFile(testMigrationFile, []byte("CREATE TABLE test_table (id INTEGER);"), 0644); err != nil {
 		t.Fatalf("Failed to create test migration file: %v", err)
 	}
@@ -162,7 +138,7 @@ func TestCheckMigrationIntegrityWithInvalidExtentionFile(t *testing.T) {
 		t.Fatalf("Failed to create gosmm_migration_history table: %v", err)
 	}
 
-	err = checkMigrationIntegrity(db, config)
+	err = checkMigrationIntegrity(db, migrationsDir)
 	assert.Error(t, err)
 
 	// Delete the test migration file
@@ -175,31 +151,23 @@ func TestMigrateSuccessfulMigrations(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	defer teardown()
 
-	config := DBConfig{
-		Driver:        "sqlite3",
-		Host:          "localhost",
-		Port:          3306,
-		User:          "root",
-		Password:      "password",
-		DBName:        "test_db",
-		MigrationsDir: "./test_migrations",
-	}
+	migrationsDir := "./test_migrations"
 
 	// Create test_migrations directory if it doesn't exist
-	if _, err := os.Stat(config.MigrationsDir); os.IsNotExist(err) {
-		err := os.Mkdir(config.MigrationsDir, 0755)
+	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
+		err := os.Mkdir(migrationsDir, 0755)
 		if err != nil {
 			t.Fatalf("Failed to create test_migrations directory: %v", err)
 		}
 	}
 
 	// Create a test migration file in the test_migrations directory
-	testMigrationFile := filepath.Join(config.MigrationsDir, "v20230101_create_test_data_00001.sql")
+	testMigrationFile := filepath.Join(migrationsDir, "v20230101_create_test_data_00001.sql")
 	if err := ioutil.WriteFile(testMigrationFile, []byte("CREATE TABLE test_table (id INTEGER);"), 0644); err != nil {
 		t.Fatalf("Failed to create test migration file: %v", err)
 	}
 
-	err := Migrate(db, config)
+	err := Migrate(db, migrationsDir)
 	assert.NoError(t, err)
 
 	// Delete the test migration file
@@ -212,26 +180,18 @@ func TestMigrateWithAlreadyMigratedFileExists(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	defer teardown()
 
-	config := DBConfig{
-		Driver:        "sqlite3",
-		Host:          "localhost",
-		Port:          3306,
-		User:          "root",
-		Password:      "password",
-		DBName:        "test_db",
-		MigrationsDir: "./test_migrations",
-	}
+	migrationsDir := "./test_migrations"
 
 	// Create test_migrations directory if it doesn't exist
-	if _, err := os.Stat(config.MigrationsDir); os.IsNotExist(err) {
-		err := os.Mkdir(config.MigrationsDir, 0755)
+	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
+		err := os.Mkdir(migrationsDir, 0755)
 		if err != nil {
 			t.Fatalf("Failed to create test_migrations directory: %v", err)
 		}
 	}
 
 	// Create a test migration file in the test_migrations directory
-	testMigrationFile1 := filepath.Join(config.MigrationsDir, "v20230101_create_test_data_00001.sql")
+	testMigrationFile1 := filepath.Join(migrationsDir, "v20230101_create_test_data_00001.sql")
 	if err := ioutil.WriteFile(testMigrationFile1, []byte("CREATE TABLE test_table (id INTEGER);"), 0644); err != nil {
 		t.Fatalf("Failed to create test migration file: %v", err)
 	}
@@ -270,12 +230,12 @@ func TestMigrateWithAlreadyMigratedFileExists(t *testing.T) {
 	}
 
 	// Create a test migration file in the test_migrations directory
-	testMigrationFile2 := filepath.Join(config.MigrationsDir, "v20230101_create_test_data_00002.sql")
+	testMigrationFile2 := filepath.Join(migrationsDir, "v20230101_create_test_data_00002.sql")
 	if err := ioutil.WriteFile(testMigrationFile2, []byte("INSERT INTO test_table (id) VALUES (1);"), 0644); err != nil {
 		t.Fatalf("Failed to create test migration file: %v", err)
 	}
 
-	err = Migrate(db, config)
+	err = Migrate(db, migrationsDir)
 	assert.NoError(t, err)
 
 	// Delete the test migration files
@@ -292,26 +252,18 @@ func TestMigrateWithSuccessFlagIsFalse(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	defer teardown()
 
-	config := DBConfig{
-		Driver:        "sqlite3",
-		Host:          "localhost",
-		Port:          3306,
-		User:          "root",
-		Password:      "password",
-		DBName:        "test_db",
-		MigrationsDir: "./test_migrations",
-	}
+	migrationsDir := "./test_migrations"
 
 	// Create test_migrations directory if it doesn't exist
-	if _, err := os.Stat(config.MigrationsDir); os.IsNotExist(err) {
-		err := os.Mkdir(config.MigrationsDir, 0755)
+	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
+		err := os.Mkdir(migrationsDir, 0755)
 		if err != nil {
 			t.Fatalf("Failed to create test_migrations directory: %v", err)
 		}
 	}
 
 	// Create a test migration file in the test_migrations directory
-	testMigrationFile := filepath.Join(config.MigrationsDir, "v20230101_create_test_data_00001.sql")
+	testMigrationFile := filepath.Join(migrationsDir, "v20230101_create_test_data_00001.sql")
 	if err := ioutil.WriteFile(testMigrationFile, []byte("CREATE TABLE test_table (id INTEGER);"), 0644); err != nil {
 		t.Fatalf("Failed to create test migration file: %v", err)
 	}
@@ -341,7 +293,7 @@ func TestMigrateWithSuccessFlagIsFalse(t *testing.T) {
 		t.Fatalf("Failed to insert gosmm_migration_history entry: %v", err)
 	}
 
-	err = Migrate(db, config)
+	err = Migrate(db, migrationsDir)
 	assert.Error(t, err)
 
 	// Delete the test migration file
