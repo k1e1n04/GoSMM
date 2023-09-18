@@ -3,18 +3,10 @@ package gosmm
 import (
 	"database/sql"
 	"fmt"
-	"github.com/BurntSushi/toml"
-	"log"
-
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
-
-// RootConfig holds the root configuration information
-type RootConfig struct {
-	Gosmm DBConfig `toml:"gosmm"`
-}
 
 // DBConfig holds the database configuration information
 type DBConfig struct {
@@ -51,15 +43,6 @@ func validateDBConfig(config *DBConfig) error {
 		return fmt.Errorf("missing migrations directory")
 	}
 	return nil
-}
-
-// LoadConfig loads the database configuration from a toml file
-func LoadConfig(configFilePath string) (*DBConfig, error) {
-	var rootConfig RootConfig
-	if _, err := toml.DecodeFile(configFilePath, &rootConfig); err != nil {
-		log.Fatalf("Could not read config: %v", err)
-	}
-	return &rootConfig.Gosmm, nil
 }
 
 // connectDB connects to the database based on the given DBConfig

@@ -22,26 +22,19 @@ To get started, you can install `GoSMM` using go get:
     go get github.com/k1e1n04/gosmm
     ```
 
-## Configuration
-`GoSMM` uses a TOML configuration file to set up the database connection and other settings.
 
-Here is an example `config.toml` file:
-
-    ```toml
-    [gosmm]
-    Driver = "mysql"
-    Host = "localhost"
-    Port = 3306
-    User = "dbuser"
-    Password = "dbpassword"
-    DBName = "mydatabase"
-    MigrationsDir = "./migrations"
-    ```
-
-You can load this configuration using the `LoadConfig()` function:
-
+## Usage
+### Configuration
     ```go
-    config, err := gosmm.LoadConfig("path/to/config.toml")
+    config := gosmm.DBConfig{
+        Driver:        os.Getenv("DB_DRIVER"),
+        Host:          os.Getenv("DB_HOST"),
+        Port:          os.Getenv("DB_PORT"),
+        User:          os.Getenv("DB_USER"),
+        Password:      os.Getenv("DB_PASSWORD"),
+        DBName:        os.Getenv("DB_NAME"),
+        MigrationsDir: os.Getenv("MIGRATIONS_DIR"),
+    }
     ```
 
 ### Fields:
@@ -53,7 +46,6 @@ You can load this configuration using the `LoadConfig()` function:
 - `DBName`: The name of the database.
 - `MigrationsDir`: Directory where your SQL migration files are stored.
 
-## Usage
 ### Performing Migrations
 To perform migrations, use the Migrate function:
 
