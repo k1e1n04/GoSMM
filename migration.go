@@ -10,6 +10,48 @@ import (
 	"time"
 )
 
+// checkMigrationIntegrity checks the integrity of the migrations by comparing the migration history
+// with the actual files in the migration directory
+func checkMigrationIntegrity(db *sql.DB, config DBConfig) error {
+	executedMigrations := make(map[string]bool)
+	rows, err := db.Query(`SELECT filename FROM gosmm_migration_history`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var filename string
+		if err := rows.Scan(&filename); err != nil {
+			return err
+		}
+		executedMigrations[filename] = true
+	}
+
+	files, err := ioutil.ReadDir(config.MigrationsDir)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		filename := file.Name()
+		if filepath.Ext(filename) != ".sql" {
+			return fmt.Errorf("Inconsistent migration state. Non-SQL file found: %s", filename)
+		}
+
+		if !executedMigrations[filename] {
+			return fmt.Errorf("Inconsistent migration state. Unexecuted migration file found: %s", filename)
+		}
+		delete(executedMigrations, filename)
+	}
+
+	for filename := range executedMigrations {
+		return fmt.Errorf("Inconsistent migration state. Executed migration file not found: %s", filename)
+	}
+
+	return nil
+}
+
 // Migrate executes the SQL migrations in the given directory
 func Migrate(config DBConfig) error {
 	err := validateDBConfig(&config)
@@ -18,6 +60,11 @@ func Migrate(config DBConfig) error {
 	}
 
 	db, err := connectDB(config)
+	if err != nil {
+		return err
+	}
+
+	err = checkMigrationIntegrity(db, config)
 	if err != nil {
 		return err
 	}
@@ -64,9 +111,6 @@ func Migrate(config DBConfig) error {
 		filename := file.Name()
 		if executedMigrations[filename] {
 			continue // skip already executed migrations
-		}
-		if filepath.Ext(filename) != ".sql" {
-			continue // skip non-SQL files
 		}
 
 		installedRank++
