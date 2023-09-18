@@ -54,13 +54,8 @@ func checkMigrationIntegrity(db *sql.DB, config DBConfig) error {
 }
 
 // Migrate executes the SQL migrations in the given directory
-func Migrate(config DBConfig) error {
-	err := validateDBConfig(&config)
-	if err != nil {
-		return err
-	}
-
-	db, err := connectDB(config)
+func Migrate(db *sql.DB, config DBConfig) error {
+	err := createHistoryTable(db)
 	if err != nil {
 		return err
 	}
@@ -87,11 +82,6 @@ func Migrate(config DBConfig) error {
 
 	// Get the filename of the last successful migration
 	lastSuccessfulMigrationFile, err := getlastSuccessfulMigrationFile(db)
-	if err != nil {
-		return err
-	}
-
-	err = createHistoryTable(db)
 	if err != nil {
 		return err
 	}
@@ -224,12 +214,17 @@ func createHistoryTable(db *sql.DB) error {
 
 // getLastInstalledRank returns the last successful installed_rank
 func getLastInstalledRank(db *sql.DB) (int, error) {
-	var lastInstalledRank int
+	var lastInstalledRank sql.NullInt64
 	err := db.QueryRow("SELECT MAX(installed_rank) FROM gosmm_migration_history WHERE success = TRUE").Scan(&lastInstalledRank)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil {
 		return 0, err
 	}
-	return lastInstalledRank, nil
+
+	if !lastInstalledRank.Valid {
+		return 0, nil
+	}
+
+	return int(lastInstalledRank.Int64), nil
 }
 
 // failedMigrationExists returns true if there is at least one failed migration

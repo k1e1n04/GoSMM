@@ -50,16 +50,20 @@ To get started, you can install `GoSMM` using go get:
 To perform migrations, use the Migrate function:
 
     ```go
-    err := gosmm.Migrate(config)
+    db, err := gosmm.Connect(config)
     if err != nil {
-    log.Fatalf("Migration failed: %v", err)
+        log.Fatalf("Connection failed: %v", err)
+    }
+    err := gosmm.Migrate(db, config)
+    if err != nil {
+        log.Fatalf("Migration failed: %v", err)
     }
     ```
 
 This will:
 
-1. Validate the DB configuration.
-2. Connect to the database.
+1. Connect to the database.
+2. Validate the DB configuration.
 3. Check migration integrity.
 4. Execute pending migrations.
 

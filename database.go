@@ -45,8 +45,12 @@ func validateDBConfig(config *DBConfig) error {
 	return nil
 }
 
-// connectDB connects to the database based on the given DBConfig
-func connectDB(config DBConfig) (*sql.DB, error) {
+// ConnectDB connects to the database based on the given DBConfig
+func ConnectDB(config DBConfig) (*sql.DB, error) {
+	err := validateDBConfig(&config)
+	if err != nil {
+		return nil, err
+	}
 	var dsn string
 	switch config.Driver {
 	case "postgres":
