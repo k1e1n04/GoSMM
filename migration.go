@@ -37,7 +37,7 @@ func checkMigrationIntegrity(db *sql.DB, config DBConfig) error {
 	// Check each executed migration exists in the migration directory
 	for _, file := range files {
 		if filepath.Ext(file.Name()) != ".sql" {
-			fmt.Errorf("Invalid file extension: %s", file.Name())
+			return fmt.Errorf("Invalid file extension: %s", file.Name())
 		}
 
 		if executedMigrations[file.Name()] {
@@ -147,6 +147,7 @@ func Migrate(config DBConfig) error {
 			// Read and execute the SQL file
 			data, err := ioutil.ReadFile(filepath.Join(config.MigrationsDir, filename))
 			if err != nil {
+				tx.Rollback()
 				return err
 			}
 
@@ -160,6 +161,7 @@ func Migrate(config DBConfig) error {
 
 				_, err = tx.Exec(statement)
 				if err != nil {
+					tx.Rollback()
 					return fmt.Errorf("failed to execute statement: %s, error: %w", statement, err)
 				}
 			}
@@ -178,6 +180,7 @@ func Migrate(config DBConfig) error {
 		`, installedRank, filename, startTime, executionTime, success)
 
 			if err != nil {
+				tx.Rollback()
 				return err
 			}
 
@@ -192,6 +195,7 @@ func Migrate(config DBConfig) error {
 	}
 
 	if err := tx.Commit(); err != nil {
+		tx.Rollback()
 		return err
 	}
 
