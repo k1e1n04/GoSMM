@@ -22,6 +22,32 @@ type DBConfig struct {
 	MigrationsDir string
 }
 
+// Validate validates the DBConfig
+func validateDBConfig(config *DBConfig) error {
+	if config.Driver == "" {
+		return fmt.Errorf("missing driver")
+	}
+	if config.Host == "" {
+		return fmt.Errorf("missing host")
+	}
+	if config.Port == 0 || config.Port > 65535 {
+		return fmt.Errorf("invalid port")
+	}
+	if config.User == "" {
+		return fmt.Errorf("missing user")
+	}
+	if config.Password == "" {
+		return fmt.Errorf("missing password")
+	}
+	if config.DBName == "" {
+		return fmt.Errorf("missing DB name")
+	}
+	if config.MigrationsDir == "" {
+		return fmt.Errorf("missing migrations directory")
+	}
+	return nil
+}
+
 // LoadConfig loads the database configuration from a toml file
 func LoadConfig(configFilePath string) (*DBConfig, error) {
 	var config DBConfig
@@ -31,8 +57,8 @@ func LoadConfig(configFilePath string) (*DBConfig, error) {
 	return &config, nil
 }
 
-// ConnectDB connects to the database based on the given DBConfig
-func ConnectDB(config DBConfig) (*sql.DB, error) {
+// connectDB connects to the database based on the given DBConfig
+func connectDB(config DBConfig) (*sql.DB, error) {
 	var dsn string
 	switch config.Driver {
 	case "postgres":
