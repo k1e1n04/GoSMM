@@ -86,11 +86,6 @@ func Migrate(db *sql.DB, config DBConfig) error {
 		return err
 	}
 
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-
 	// Load executed migrations from history table
 	executedMigrations := make(map[string]bool)
 	rows, err := db.Query(`SELECT filename FROM gosmm_migration_history`)
@@ -141,7 +136,6 @@ func Migrate(db *sql.DB, config DBConfig) error {
 			// Read and execute the SQL file
 			data, err := ioutil.ReadFile(filepath.Join(config.MigrationsDir, filename))
 			if err != nil {
-				tx.Rollback()
 				return err
 			}
 
@@ -153,9 +147,8 @@ func Migrate(db *sql.DB, config DBConfig) error {
 					continue // Skip empty statements
 				}
 
-				_, err = tx.Exec(statement)
+				_, err = db.Exec(statement)
 				if err != nil {
-					tx.Rollback()
 					return fmt.Errorf("failed to execute statement: %s, error: %w", statement, err)
 				}
 			}
@@ -164,7 +157,7 @@ func Migrate(db *sql.DB, config DBConfig) error {
 			success := err == nil
 
 			// Record the migration in the history table
-			_, err = tx.Exec(`
+			_, err = db.Exec(`
 			INSERT INTO gosmm_migration_history (
 				installed_rank, 
 			 	filename, 
@@ -174,7 +167,6 @@ func Migrate(db *sql.DB, config DBConfig) error {
 		`, installedRank, filename, startTime, executionTime, success)
 
 			if err != nil {
-				tx.Rollback()
 				return err
 			}
 
@@ -182,11 +174,6 @@ func Migrate(db *sql.DB, config DBConfig) error {
 				return fmt.Errorf("Migration failed for file: %s", filename)
 			}
 		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		return err
 	}
 
 	err = db.Close()
