@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"log"
+
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // DBConfig holds the database configuration information
