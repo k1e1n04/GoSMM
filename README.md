@@ -1,6 +1,10 @@
 # GoSMM
 Golang Simple Migration Manager
 
+[![GoDoc](https://pkg.go.dev/badge/github.com/yourusername/yourreponame)](https://pkg.go.dev/github.com/k1e1n04/gosmm)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub release](https://img.shields.io/github/release/yourusername/yourreponame.svg)](https://github.com/k1e1n04/gosmm/releases/latest)
+
 ## Overview
 `GoSMM` is a simple yet powerful SQL migration manager written in Go. This library enables you to manage SQL database migrations for multiple database drivers including Postgres, MySQL, and SQLite3.
 
