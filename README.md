@@ -13,7 +13,6 @@ The `GoSMM` package allows you to perform tasks like:
 - Checking migration integrity.
 - Executing migration files in order.
 - Creating migration history tables.
-- Rollback transactions on failure.
 
 ## Installation
 To get started, you can install `GoSMM` using go get:
@@ -43,7 +42,6 @@ To get started, you can install `GoSMM` using go get:
 - `User`: Username for the database.
 - `Password`: Password for the database.
 - `DBName`: The name of the database.
-- `MigrationsDir`: Directory where your SQL migration files are stored.
 
 ### Performing Migrations
 To perform migrations, use the Migrate function:
