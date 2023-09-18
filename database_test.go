@@ -128,7 +128,7 @@ func TestConnectDBWithMySQL(t *testing.T) {
 		MigrationsDir: "migrations",
 	}
 
-	_, err := connectDB(config)
+	_, err := ConnectDB(config)
 	assert.Nil(t, err)
 }
 
@@ -143,7 +143,7 @@ func TestConnectDBWithPostgres(t *testing.T) {
 		MigrationsDir: "migrations",
 	}
 
-	_, err := connectDB(config)
+	_, err := ConnectDB(config)
 	assert.Nil(t, err)
 }
 
@@ -158,6 +158,6 @@ func TestConnectDBWithSQLite(t *testing.T) {
 		MigrationsDir: "migrations",
 	}
 
-	_, err := connectDB(config)
+	_, err := ConnectDB(config)
 	assert.Nil(t, err)
 }
