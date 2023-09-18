@@ -11,6 +11,11 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// RootConfig holds the root configuration information
+type RootConfig struct {
+	Gosmm DBConfig `toml:"gosmm"`
+}
+
 // DBConfig holds the database configuration information
 type DBConfig struct {
 	Driver        string
@@ -50,11 +55,11 @@ func validateDBConfig(config *DBConfig) error {
 
 // LoadConfig loads the database configuration from a toml file
 func LoadConfig(configFilePath string) (*DBConfig, error) {
-	var config DBConfig
-	if _, err := toml.DecodeFile(configFilePath, &config); err != nil {
+	var rootConfig RootConfig
+	if _, err := toml.DecodeFile(configFilePath, &rootConfig); err != nil {
 		log.Fatalf("Could not read config: %v", err)
 	}
-	return &config, nil
+	return &rootConfig.Gosmm, nil
 }
 
 // connectDB connects to the database based on the given DBConfig

@@ -21,9 +21,10 @@ To get started, you can install `GoSMM` using go get:
 ## Configuration
 `GoSMM` uses a TOML configuration file to set up the database connection and other settings.
 
-Here is an example `gosmm.toml` file:
+Here is an example `config.toml` file:
 
     ```toml
+    [gosmm]
     Driver = "mysql"
     Host = "localhost"
     Port = 3306
