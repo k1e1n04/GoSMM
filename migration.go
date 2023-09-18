@@ -12,8 +12,9 @@ import (
 
 // checkMigrationIntegrity checks the migration history table for inconsistencies
 func checkMigrationIntegrity(db *sql.DB, config DBConfig) error {
+	// Load executed migrations from the history table
 	executedMigrations := make(map[string]bool)
-	rows, err := db.Query(`SELECT filename FROM gosmm_migration_history`)
+	rows, err := db.Query(`SELECT filename FROM gosmm_migration_history WHERE success = TRUE`)
 	if err != nil {
 		return err
 	}
@@ -27,6 +28,24 @@ func checkMigrationIntegrity(db *sql.DB, config DBConfig) error {
 		executedMigrations[filename] = true
 	}
 
+	// Read all SQL files from the migration directory
+	files, err := ioutil.ReadDir(config.MigrationsDir)
+	if err != nil {
+		return err
+	}
+
+	// Check each executed migration exists in the migration directory
+	for _, file := range files {
+		if filepath.Ext(file.Name()) != ".sql" {
+			fmt.Errorf("Invalid file extension: %s", file.Name())
+		}
+
+		if executedMigrations[file.Name()] {
+			delete(executedMigrations, file.Name())
+		}
+	}
+
+	// Any remaining executed migrations in the map are inconsistencies
 	for filename := range executedMigrations {
 		return fmt.Errorf("Inconsistent migration state. Executed migration file not found: %s", filename)
 	}
