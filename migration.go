@@ -1,6 +1,7 @@
 package gosmm
 
 import (
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -26,14 +27,7 @@ func Migrate(config DBConfig) error {
 		return err
 	}
 
-	// Create history table if it doesn't exist
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS gosmm_migration_history (
-		installed_rank INTEGER,
-		filename TEXT,
-		installed_on TIMESTAMP,
-		execution_time INTEGER,
-		success BOOLEAN
-	)`)
+	err = createHistoryTable(db)
 	if err != nil {
 		return err
 	}
@@ -130,5 +124,20 @@ func Migrate(config DBConfig) error {
 		return err
 	}
 
+	return nil
+}
+
+// createHistoryTable creates the migration history table if it doesn't exist
+func createHistoryTable(db *sql.DB) error {
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS gosmm_migration_history (
+		installed_rank INTEGER,
+		filename TEXT,
+		installed_on TIMESTAMP,
+		execution_time INTEGER,
+		success BOOLEAN
+	)`)
+	if err != nil {
+		return err
+	}
 	return nil
 }
