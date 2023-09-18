@@ -1,7 +1,6 @@
 package gosmm
 
 import (
-	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -9,7 +8,18 @@ import (
 	"time"
 )
 
-func Migrate(db *sql.DB, config DBConfig) error {
+// Migrate executes the SQL migrations in the given directory
+func Migrate(config DBConfig) error {
+	err := validateDBConfig(&config)
+	if err != nil {
+		return err
+	}
+
+	db, err := connectDB(config)
+	if err != nil {
+		return err
+	}
+
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -53,7 +63,7 @@ func Migrate(db *sql.DB, config DBConfig) error {
 		return files[i].Name() < files[j].Name()
 	})
 
-	installedRank := 0
+	installedRank := len(executedMigrations) + 1
 
 	for _, file := range files {
 		filename := file.Name()
@@ -99,6 +109,11 @@ func Migrate(db *sql.DB, config DBConfig) error {
 	}
 
 	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	err = db.Close()
+	if err != nil {
 		return err
 	}
 
