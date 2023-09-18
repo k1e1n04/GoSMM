@@ -10,8 +10,7 @@ import (
 	"time"
 )
 
-// checkMigrationIntegrity checks the integrity of the migrations by comparing the migration history
-// with the actual files in the migration directory
+// checkMigrationIntegrity checks the migration history table for inconsistencies
 func checkMigrationIntegrity(db *sql.DB, config DBConfig) error {
 	executedMigrations := make(map[string]bool)
 	rows, err := db.Query(`SELECT filename FROM gosmm_migration_history`)
@@ -26,23 +25,6 @@ func checkMigrationIntegrity(db *sql.DB, config DBConfig) error {
 			return err
 		}
 		executedMigrations[filename] = true
-	}
-
-	files, err := ioutil.ReadDir(config.MigrationsDir)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		filename := file.Name()
-		if filepath.Ext(filename) != ".sql" {
-			return fmt.Errorf("Inconsistent migration state. Non-SQL file found: %s", filename)
-		}
-
-		if !executedMigrations[filename] {
-			return fmt.Errorf("Inconsistent migration state. Unexecuted migration file found: %s", filename)
-		}
-		delete(executedMigrations, filename)
 	}
 
 	for filename := range executedMigrations {
