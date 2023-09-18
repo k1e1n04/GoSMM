@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -63,7 +64,7 @@ func Migrate(config DBConfig) error {
 		return files[i].Name() < files[j].Name()
 	})
 
-	installedRank := len(executedMigrations) + 1
+	installedRank := len(executedMigrations)
 
 	for _, file := range files {
 		filename := file.Name()
@@ -84,7 +85,19 @@ func Migrate(config DBConfig) error {
 			return err
 		}
 
-		_, err = db.Exec(string(data))
+		// Split the file content by ";" and execute each statement.
+		statements := strings.Split(string(data), ";")
+		for _, statement := range statements {
+			statement = strings.TrimSpace(statement) // Trim whitespace
+			if statement == "" {
+				continue // Skip empty statements
+			}
+
+			_, err = db.Exec(statement)
+			if err != nil {
+				return fmt.Errorf("failed to execute statement: %s, error: %w", statement, err)
+			}
+		}
 		executionTime := time.Since(startTime).Milliseconds()
 
 		success := err == nil
