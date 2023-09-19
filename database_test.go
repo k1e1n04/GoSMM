@@ -7,13 +7,12 @@ import (
 
 func TestValidateDBConfig(t *testing.T) {
 	validConfig := DBConfig{
-		Driver:        "mysql",
-		Host:          "localhost",
-		Port:          3306,
-		User:          "root",
-		Password:      "password",
-		DBName:        "test_db",
-		MigrationsDir: "migrations",
+		Driver:   "mysql",
+		Host:     "localhost",
+		Port:     3306,
+		User:     "root",
+		Password: "password",
+		DBName:   "test_db",
 	}
 
 	assert.Nil(t, validateDBConfig(&validConfig))
@@ -21,13 +20,12 @@ func TestValidateDBConfig(t *testing.T) {
 
 func TestValidateDBConfigWithInvalidPort(t *testing.T) {
 	validConfig := DBConfig{
-		Driver:        "mysql",
-		Host:          "localhost",
-		Port:          65536,
-		User:          "root",
-		Password:      "password",
-		DBName:        "test_db",
-		MigrationsDir: "migrations",
+		Driver:   "mysql",
+		Host:     "localhost",
+		Port:     65536,
+		User:     "root",
+		Password: "password",
+		DBName:   "test_db",
 	}
 
 	assert.NotNil(t, validateDBConfig(&validConfig))
@@ -35,13 +33,12 @@ func TestValidateDBConfigWithInvalidPort(t *testing.T) {
 
 func TestValidateDBConfigWithMissingDriver(t *testing.T) {
 	validConfig := DBConfig{
-		Driver:        "",
-		Host:          "localhost",
-		Port:          65536,
-		User:          "root",
-		Password:      "password",
-		DBName:        "test_db",
-		MigrationsDir: "migrations",
+		Driver:   "",
+		Host:     "localhost",
+		Port:     65536,
+		User:     "root",
+		Password: "password",
+		DBName:   "test_db",
 	}
 
 	assert.NotNil(t, validateDBConfig(&validConfig))
@@ -49,13 +46,12 @@ func TestValidateDBConfigWithMissingDriver(t *testing.T) {
 
 func TestValidateDBConfigWithMissingHost(t *testing.T) {
 	validConfig := DBConfig{
-		Driver:        "mysql",
-		Host:          "",
-		Port:          65536,
-		User:          "root",
-		Password:      "password",
-		DBName:        "test_db",
-		MigrationsDir: "migrations",
+		Driver:   "mysql",
+		Host:     "",
+		Port:     65536,
+		User:     "root",
+		Password: "password",
+		DBName:   "test_db",
 	}
 
 	assert.NotNil(t, validateDBConfig(&validConfig))
@@ -63,13 +59,12 @@ func TestValidateDBConfigWithMissingHost(t *testing.T) {
 
 func TestValidateDBConfigWithMissingUser(t *testing.T) {
 	validConfig := DBConfig{
-		Driver:        "mysql",
-		Host:          "localhost",
-		Port:          65536,
-		User:          "",
-		Password:      "password",
-		DBName:        "test_db",
-		MigrationsDir: "migrations",
+		Driver:   "mysql",
+		Host:     "localhost",
+		Port:     65536,
+		User:     "",
+		Password: "password",
+		DBName:   "test_db",
 	}
 
 	assert.NotNil(t, validateDBConfig(&validConfig))
@@ -77,13 +72,12 @@ func TestValidateDBConfigWithMissingUser(t *testing.T) {
 
 func TestValidateDBConfigWithMissingPassword(t *testing.T) {
 	validConfig := DBConfig{
-		Driver:        "mysql",
-		Host:          "localhost",
-		Port:          65536,
-		User:          "root",
-		Password:      "",
-		DBName:        "test_db",
-		MigrationsDir: "migrations",
+		Driver:   "mysql",
+		Host:     "localhost",
+		Port:     65536,
+		User:     "root",
+		Password: "",
+		DBName:   "test_db",
 	}
 
 	assert.NotNil(t, validateDBConfig(&validConfig))
@@ -91,27 +85,12 @@ func TestValidateDBConfigWithMissingPassword(t *testing.T) {
 
 func TestValidateDBConfigWithMissingDBName(t *testing.T) {
 	validConfig := DBConfig{
-		Driver:        "mysql",
-		Host:          "localhost",
-		Port:          65536,
-		User:          "root",
-		Password:      "password",
-		DBName:        "",
-		MigrationsDir: "migrations",
-	}
-
-	assert.NotNil(t, validateDBConfig(&validConfig))
-}
-
-func TestValidateDBConfigWithMissingMigrationsDir(t *testing.T) {
-	validConfig := DBConfig{
-		Driver:        "mysql",
-		Host:          "localhost",
-		Port:          65536,
-		User:          "root",
-		Password:      "password",
-		DBName:        "test_db",
-		MigrationsDir: "",
+		Driver:   "mysql",
+		Host:     "localhost",
+		Port:     65536,
+		User:     "root",
+		Password: "password",
+		DBName:   "",
 	}
 
 	assert.NotNil(t, validateDBConfig(&validConfig))
@@ -119,13 +98,12 @@ func TestValidateDBConfigWithMissingMigrationsDir(t *testing.T) {
 
 func TestConnectDBWithMySQL(t *testing.T) {
 	config := DBConfig{
-		Driver:        "mysql",
-		Host:          "localhost",
-		Port:          3306,
-		User:          "root",
-		Password:      "password",
-		DBName:        "test_db",
-		MigrationsDir: "migrations",
+		Driver:   "mysql",
+		Host:     "localhost",
+		Port:     3306,
+		User:     "root",
+		Password: "password",
+		DBName:   "test_db",
 	}
 
 	_, err := ConnectDB(config)
@@ -134,13 +112,12 @@ func TestConnectDBWithMySQL(t *testing.T) {
 
 func TestConnectDBWithPostgres(t *testing.T) {
 	config := DBConfig{
-		Driver:        "postgres",
-		Host:          "localhost",
-		Port:          5432,
-		User:          "root",
-		Password:      "password",
-		DBName:        "test_db",
-		MigrationsDir: "migrations",
+		Driver:   "postgres",
+		Host:     "localhost",
+		Port:     5432,
+		User:     "root",
+		Password: "password",
+		DBName:   "test_db",
 	}
 
 	_, err := ConnectDB(config)
@@ -149,13 +126,12 @@ func TestConnectDBWithPostgres(t *testing.T) {
 
 func TestConnectDBWithSQLite(t *testing.T) {
 	config := DBConfig{
-		Driver:        "sqlite3",
-		Host:          "localhost",
-		Port:          5432,
-		User:          "root",
-		Password:      "password",
-		DBName:        "test_db",
-		MigrationsDir: "migrations",
+		Driver:   "sqlite3",
+		Host:     "localhost",
+		Port:     5432,
+		User:     "root",
+		Password: "password",
+		DBName:   "test_db",
 	}
 
 	_, err := ConnectDB(config)

@@ -10,13 +10,12 @@ import (
 
 // DBConfig holds the database configuration information
 type DBConfig struct {
-	Driver        string
-	Host          string
-	Port          int
-	User          string
-	Password      string
-	DBName        string
-	MigrationsDir string
+	Driver   string
+	Host     string
+	Port     int
+	User     string
+	Password string
+	DBName   string
 }
 
 // Validate validates the DBConfig
@@ -38,9 +37,6 @@ func validateDBConfig(config *DBConfig) error {
 	}
 	if config.DBName == "" {
 		return fmt.Errorf("missing DB name")
-	}
-	if config.MigrationsDir == "" {
-		return fmt.Errorf("missing migrations directory")
 	}
 	return nil
 }
