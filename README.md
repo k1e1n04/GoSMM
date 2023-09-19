@@ -1,9 +1,9 @@
 # GoSMM
 Golang Simple Migration Manager
 
-[![GoDoc](https://pkg.go.dev/badge/github.com/yourusername/yourreponame)](https://pkg.go.dev/github.com/k1e1n04/GoSMM)
+[![GoDoc](https://pkg.go.dev/badge/github.com/yourusername/yourreponame)](https://pkg.go.dev/github.com/k1e1n04/gosmm)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub release](https://img.shields.io/github/release/yourusername/yourreponame.svg)](https://github.com/k1e1n04/GoSMM/releases/latest)
+[![GitHub release](https://img.shields.io/github/release/yourusername/yourreponame.svg)](https://github.com/k1e1n04/gosmm/releases/latest)
 
 ## Overview
 `GoSMM` is a simple yet powerful SQL migration manager written in Go. This library enables you to manage SQL database migrations for multiple database drivers including Postgres, MySQL, and SQLite3.
@@ -18,14 +18,14 @@ The `GoSMM` package allows you to perform tasks like:
 To get started, you can install `GoSMM` using go get:
     
     ```bash
-    go get github.com/k1e1n04/GoSMM
+    go get github.com/k1e1n04/gosmm
     ```
 
 
 ## Usage
 ### Configuration
     ```go
-    config := GoSMM.DBConfig{
+    config := gosmm.DBConfig{
         Driver:        os.Getenv("DB_DRIVER"),
         Host:          os.Getenv("DB_HOST"),
         Port:          os.Getenv("DB_PORT"),
@@ -47,11 +47,11 @@ To get started, you can install `GoSMM` using go get:
 To perform migrations, use the Migrate function:
 
     ```go
-    db, err := GoSMM.Connect(config)
+    db, err := gosmm.Connect(config)
     if err != nil {
         log.Fatalf("Connection failed: %v", err)
     }
-    err := GoSMM.Migrate(db, os.Getenv("MIGRATIONS_DIR"))
+    err := gosmm.Migrate(db, os.Getenv("MIGRATIONS_DIR"))
     if err != nil {
         log.Fatalf("Migration failed: %v", err)
     }
@@ -65,7 +65,7 @@ This will:
 4. Execute pending migrations.
 
 ## How to Contribute
-Contributions are welcome! Feel free to submit a pull request on [GitHub](https://github.com/k1e1n04/GoSMM).
+Contributions are welcome! Feel free to submit a pull request on [GitHub](https://github.com/k1e1n04/gosmm).
 
 ## License
 This project is licensed under the MIT License.
