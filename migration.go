@@ -261,13 +261,3 @@ func failedMigrationExists(db *sql.DB) (bool, error) {
 	}
 	return failedMigrationExists, nil
 }
-
-// getlastSuccessfulMigrationFile returns the filename of the last successful migration
-func getlastSuccessfulMigrationFile(db *sql.DB) (string, error) {
-	var lastSuccessfulMigrationFile string
-	err := db.QueryRow("SELECT filename FROM gosmm_migration_history WHERE success = TRUE ORDER BY installed_rank DESC LIMIT 1").Scan(&lastSuccessfulMigrationFile)
-	if err != nil && err != sql.ErrNoRows {
-		return "", err
-	}
-	return lastSuccessfulMigrationFile, nil
-}
