@@ -57,24 +57,24 @@ func checkMigrationIntegrity(db *sql.DB, migrationsDir string) error {
 func Migrate(db *sql.DB, migrationsDir string) error {
 	err := createHistoryTable(db)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create history table: %w", err)
 	}
 
 	err = checkMigrationIntegrity(db, migrationsDir)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to check migration integrity: %w", err)
 	}
 
 	// Get the last successful installed_rank
 	lastInstalledRank, err := getLastInstalledRank(db)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get last successful installed_rank: %w", err)
 	}
 
 	// Check if there are any migrations where success is false
 	failedMigrationExists, err := failedMigrationExists(db)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to check if failed migration exists: %w", err)
 	}
 	if failedMigrationExists {
 		return fmt.Errorf("Cannot proceed, there is at least one failed migration")
@@ -90,13 +90,13 @@ func Migrate(db *sql.DB, migrationsDir string) error {
 	executedMigrations := make(map[string]bool)
 	rows, err := db.Query(`SELECT filename FROM gosmm_migration_history`)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to query gosmm_migration_history: %w", err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var filename string
 		if err := rows.Scan(&filename); err != nil {
-			return err
+			return fmt.Errorf("failed to scan filename: %w", err)
 		}
 		executedMigrations[filename] = true
 	}
@@ -104,7 +104,7 @@ func Migrate(db *sql.DB, migrationsDir string) error {
 	// Read all SQL files from the migration directory
 	files, err := ioutil.ReadDir(migrationsDir)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read migrations directory: %w", err)
 	}
 
 	// Sort files by name
@@ -136,7 +136,12 @@ func Migrate(db *sql.DB, migrationsDir string) error {
 			// Read and execute the SQL file
 			data, err := ioutil.ReadFile(filepath.Join(migrationsDir, filename))
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to read file: %w", err)
+			}
+
+			tx, err := db.Begin()
+			if err != nil {
+				return fmt.Errorf("failed to begin transaction: %w", err)
 			}
 
 			// Split the file content by ";" and execute each statement.
@@ -147,9 +152,22 @@ func Migrate(db *sql.DB, migrationsDir string) error {
 					continue // Skip empty statements
 				}
 
-				_, err = db.Exec(statement)
+				_, err = tx.Exec(statement)
 				if err != nil {
-					return fmt.Errorf("failed to execute statement: %s, error: %w", statement, err)
+					tx.Rollback()
+
+					// Record the migration in the history table
+					executionTime := time.Since(startTime).Milliseconds()
+					success := false
+					_, err = db.Exec(`
+						INSERT INTO gosmm_migration_history (
+						    installed_rank, 
+							filename, 
+							installed_on, 
+							execution_time, success
+						) VALUES (?, ?, ?, ?, ?)
+					`, installedRank, filename, startTime, executionTime, success)
+					return fmt.Errorf("failed to execute filename: %s, statement: %s, error: %w", filename, statement, err)
 				}
 			}
 			executionTime := time.Since(startTime).Milliseconds()
@@ -159,26 +177,26 @@ func Migrate(db *sql.DB, migrationsDir string) error {
 			// Record the migration in the history table
 			_, err = db.Exec(`
 			INSERT INTO gosmm_migration_history (
-				installed_rank, 
-			 	filename, 
-			    installed_on, 
-			    execution_time, success
-			) VALUES (?, ?, ?, ?, ?)
-		`, installedRank, filename, startTime, executionTime, success)
-
+					installed_rank, 
+					filename, 
+					installed_on, 
+					execution_time, success
+				) VALUES (?, ?, ?, ?, ?)
+			`, installedRank, filename, startTime, executionTime, success)
 			if err != nil {
-				return err
+				tx.Rollback()
+				return fmt.Errorf("failed to record migration in history table, error: %w, filename: %s", err, filename)
 			}
 
-			if !success {
-				return fmt.Errorf("Migration failed for file: %s", filename)
+			if err := tx.Commit(); err != nil {
+				return fmt.Errorf("failed to commit transaction: %w", err)
 			}
 		}
 	}
 
 	err = db.Close()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to close database: %w", err)
 	}
 
 	return nil
