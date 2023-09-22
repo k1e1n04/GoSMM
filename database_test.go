@@ -137,3 +137,35 @@ func TestConnectDBWithSQLite(t *testing.T) {
 	_, err := ConnectDB(config)
 	assert.Nil(t, err)
 }
+
+func TestConnectDBWithInvalidDriver(t *testing.T) {
+	config := DBConfig{
+		Driver:   "invalid",
+		Host:     "localhost",
+		Port:     5432,
+		User:     "root",
+		Password: "password",
+		DBName:   "test_db",
+	}
+
+	_, err := ConnectDB(config)
+	assert.Error(t, err)
+}
+
+func TestCloseDB(t *testing.T) {
+	config := DBConfig{
+		Driver:   "sqlite3",
+		Host:     "localhost",
+		Port:     5432,
+		User:     "root",
+		Password: "password",
+		DBName:   "test_db",
+	}
+	db, err := ConnectDB(config)
+	if err != nil {
+		panic(err)
+	}
+
+	err = CloseDB(db)
+	assert.Nil(t, err)
+}
