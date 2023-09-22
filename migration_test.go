@@ -11,6 +11,10 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const (
+	migrationsDir = "./test_migrations"
+)
+
 func setupTestDB(t *testing.T) (*sql.DB, func()) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
@@ -25,8 +29,6 @@ func setupTestDB(t *testing.T) (*sql.DB, func()) {
 func TestCheckMigrationIntegrity(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	defer teardown()
-
-	migrationsDir := "./test_migrations"
 
 	// Create test_migrations directory if it doesn't exist
 	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
@@ -67,8 +69,6 @@ func TestCheckMigrationIntegrityWithMissingMigrationFile(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	defer teardown()
 
-	migrationsDir := "./test_migrations"
-
 	// Create test_migrations directory if it doesn't exist
 	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
 		err := os.Mkdir(migrationsDir, 0755)
@@ -89,7 +89,7 @@ func TestCheckMigrationIntegrityWithMissingMigrationFile(t *testing.T) {
 		t.Fatalf("Failed to create gosmm_migration_history table: %v", err)
 	}
 
-	// Create gossm_migration_history entry for the missing migration file
+	// Create gosmm_migration_history entry for the missing migration file
 	_, err = db.Exec(`INSERT INTO gosmm_migration_history (
 			installed_rank,
 			filename,
@@ -106,11 +106,9 @@ func TestCheckMigrationIntegrityWithMissingMigrationFile(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestCheckMigrationIntegrityWithInvalidExtentionFile(t *testing.T) {
+func TestCheckMigrationIntegrityWithInvalidExtension(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	defer teardown()
-
-	migrationsDir := "./test_migrations"
 
 	// Create test_migrations directory if it doesn't exist
 	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
@@ -147,11 +145,116 @@ func TestCheckMigrationIntegrityWithInvalidExtentionFile(t *testing.T) {
 	}
 }
 
-func TestMigrateWithSuccessFlagIsFalse(t *testing.T) {
+func TestMigrateSingleFile(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	defer teardown()
 
-	migrationsDir := "./test_migrations"
+	// Create test_migrations directory if it doesn't exist
+	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
+		err := os.Mkdir(migrationsDir, 0755)
+		if err != nil {
+			t.Fatalf("Failed to create test_migrations directory: %v", err)
+		}
+	}
+
+	// Create a test migration file in the test_migrations directory
+	testMigrationFile := filepath.Join(migrationsDir, "v20230101_create_test_data_00001.sql")
+	if err := ioutil.WriteFile(testMigrationFile, []byte("CREATE TABLE test_table (id INTEGER);"), 0644); err != nil {
+		t.Fatalf("Failed to create test migration file: %v", err)
+	}
+
+	err := Migrate(db, migrationsDir)
+	assert.NoError(t, err)
+
+	// Check test_table exists
+	var exists bool
+	err = db.QueryRow("SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'test_table')").Scan(&exists)
+	if err != nil {
+		t.Fatalf("Failed to check if test_table exists: %v", err)
+	}
+	if !exists {
+		t.Fatalf("Failed to create test_table")
+	}
+
+	// Check gosmm_migration_history entry exists
+	var installedRank int
+	err = db.QueryRow("SELECT installed_rank FROM gosmm_migration_history WHERE filename = 'v20230101_create_test_data_00001.sql'").Scan(&installedRank)
+	if err != nil {
+		t.Fatalf("Failed to check if gosmm_migration_history entry exists: %v", err)
+	}
+	if installedRank != 1 {
+		t.Fatalf("Failed to create gosmm_migration_history entry")
+	}
+
+	// Delete the test migration file
+	if err := os.Remove(testMigrationFile); err != nil {
+		t.Fatalf("Failed to delete test migration file: %v", err)
+	}
+}
+
+func TestMigrateMultipleFiles(t *testing.T) {
+	db, teardown := setupTestDB(t)
+	defer teardown()
+
+	// Create test_migrations directory if it doesn't exist
+	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
+		err := os.Mkdir(migrationsDir, 0755)
+		if err != nil {
+			t.Fatalf("Failed to create test_migrations directory: %v", err)
+		}
+	}
+
+	// Create test migration files in the test_migrations directory
+	testMigrationFile1 := filepath.Join(migrationsDir, "v20230101_create_test_data_00001.sql")
+	if err := ioutil.WriteFile(testMigrationFile1, []byte("CREATE TABLE test_table (id INTEGER);"), 0644); err != nil {
+		t.Fatalf("Failed to create test migration file: %v", err)
+	}
+	testMigrationFile2 := filepath.Join(migrationsDir, "v20230101_create_test_data_00002.sql")
+	if err := ioutil.WriteFile(testMigrationFile2, []byte("CREATE TABLE test_table_2 (id INTEGER);"), 0644); err != nil {
+		t.Fatalf("Failed to create test migration file: %v", err)
+	}
+
+	err := Migrate(db, migrationsDir)
+	assert.NoError(t, err)
+
+	// Check test_table exists
+	var exists bool
+	err = db.QueryRow("SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'test_table')").Scan(&exists)
+	if err != nil {
+		t.Fatalf("Failed to check if test_table exists: %v", err)
+	}
+	if !exists {
+		t.Fatalf("Failed to create test_table")
+	}
+
+	// Check test_table_2 exists
+	err = db.QueryRow("SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'test_table_2')").Scan(&exists)
+	if err != nil {
+		t.Fatalf("Failed to check if test_table_2 exists: %v", err)
+	}
+
+	// Check gosmm_migration_history entry exists
+	var installedRank int
+	err = db.QueryRow("SELECT installed_rank FROM gosmm_migration_history WHERE filename = 'v20230101_create_test_data_00002.sql'").Scan(&installedRank)
+	if err != nil {
+		t.Fatalf("Failed to check if gosmm_migration_history entry exists: %v", err)
+	}
+	if installedRank != 2 {
+		t.Fatalf("Failed to create gosmm_migration_history entry")
+	}
+
+	// Delete the test migration files
+	if err := os.Remove(testMigrationFile1); err != nil {
+		t.Fatalf("Failed to delete test migration file: %v", err)
+	}
+	if err := os.Remove(testMigrationFile2); err != nil {
+		t.Fatalf("Failed to delete test migration file: %v", err)
+	}
+}
+
+func TestMigrateWithSuccessFlagIsFalse(t *testing.T) {
+	db, teardown := setupTestDB(t)
+	defer teardown()
 
 	// Create test_migrations directory if it doesn't exist
 	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
@@ -179,7 +282,7 @@ func TestMigrateWithSuccessFlagIsFalse(t *testing.T) {
 		t.Fatalf("Failed to create gosmm_migration_history table: %v", err)
 	}
 
-	// Create gossm_migration_history entry
+	// Create gosmm_migration_history entry
 	_, err = db.Exec(`INSERT INTO gosmm_migration_history (
 			installed_rank,
 			filename,
@@ -197,6 +300,75 @@ func TestMigrateWithSuccessFlagIsFalse(t *testing.T) {
 
 	// Delete the test migration file
 	if err := os.Remove(testMigrationFile); err != nil {
+		t.Fatalf("Failed to delete test migration file: %v", err)
+	}
+}
+
+func TestMigrateWithSecondFileHasInvalidSQL(t *testing.T) {
+	db, teardown := setupTestDB(t)
+	defer teardown()
+
+	// Create test_migrations directory if it doesn't exist
+	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
+		err := os.Mkdir(migrationsDir, 0755)
+		if err != nil {
+			t.Fatalf("Failed to create test_migrations directory: %v", err)
+		}
+	}
+
+	// Create test migration files in the test_migrations directory
+	testMigrationFile1 := filepath.Join(migrationsDir, "v20230101_create_test_data_00001.sql")
+	if err := ioutil.WriteFile(testMigrationFile1, []byte("CREATE TABLE test_table (id INTEGER);"), 0644); err != nil {
+		t.Fatalf("Failed to create test migration file: %v", err)
+	}
+	testMigrationFile2 := filepath.Join(migrationsDir, "v20230101_create_test_data_00002.sql")
+	if err := ioutil.WriteFile(testMigrationFile2, []byte(" TABLE test_table_2 (id INTEGER);"), 0644); err != nil {
+		t.Fatalf("Failed to create test migration file: %v", err)
+	}
+
+	err := Migrate(db, migrationsDir)
+	assert.Error(t, err)
+
+	// Check test_table exists
+	var exists bool
+	err = db.QueryRow("SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'test_table')").Scan(&exists)
+	if err != nil {
+		t.Fatalf("Failed to check if test_table exists: %v", err)
+	}
+	if !exists {
+		t.Fatalf("Failed to create test_table")
+	}
+
+	// // Check gosmm_migration_history entry exists
+	var installedRank int
+	var success bool
+	err = db.QueryRow("SELECT installed_rank, success FROM gosmm_migration_history WHERE filename = 'v20230101_create_test_data_00001.sql'").Scan(&installedRank, &success)
+	if err != nil {
+		t.Fatalf("Failed to check if gosmm_migration_history entry exists: %v", err)
+	}
+	if installedRank != 1 {
+		t.Fatalf("Failed to create gosmm_migration_history entry")
+	}
+	if success != true {
+		t.Fatalf("Failed to create gosmm_migration_history entry")
+	}
+
+	err = db.QueryRow("SELECT installed_rank, success FROM gosmm_migration_history WHERE filename = 'v20230101_create_test_data_00002.sql'").Scan(&installedRank, &success)
+	if err != nil {
+		t.Fatalf("Failed to check if gosmm_migration_history entry exists: %v", err)
+	}
+	if installedRank != 2 {
+		t.Fatalf("Failed to create gosmm_migration_history entry")
+	}
+	if success != false {
+		t.Fatalf("Failed to create gosmm_migration_history entry")
+	}
+
+	// Delete the test migration files
+	if err := os.Remove(testMigrationFile1); err != nil {
+		t.Fatalf("Failed to delete test migration file: %v", err)
+	}
+	if err := os.Remove(testMigrationFile2); err != nil {
 		t.Fatalf("Failed to delete test migration file: %v", err)
 	}
 }

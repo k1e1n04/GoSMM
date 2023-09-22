@@ -2,6 +2,7 @@ package gosmm
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -11,7 +12,6 @@ import (
 )
 
 const (
-	historyTableName      = "gosmm_migration_history"
 	sqlFileExtension      = ".sql"
 	migrationHistoryTable = "gosmm_migration_history"
 )
@@ -24,7 +24,6 @@ func checkMigrationIntegrity(db *sql.DB, migrationsDir string) error {
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
 
 	for rows.Next() {
 		var filename string
@@ -46,7 +45,7 @@ func checkMigrationIntegrity(db *sql.DB, migrationsDir string) error {
 	// Check each executed migration exists in the migration directory
 	for _, file := range files {
 		if filepath.Ext(file.Name()) != sqlFileExtension {
-			return fmt.Errorf("Invalid file extension: %s", file.Name())
+			return fmt.Errorf("invalid file extension: %s", file.Name())
 		}
 
 		if executedMigrations[file.Name()] {
@@ -56,7 +55,7 @@ func checkMigrationIntegrity(db *sql.DB, migrationsDir string) error {
 
 	// Any remaining executed migrations in the map are inconsistencies
 	for filename := range executedMigrations {
-		return fmt.Errorf("Inconsistent migration state. Executed migration file not found: %s", filename)
+		return fmt.Errorf("inconsistent migration state. executed migration file not found: %s", filename)
 	}
 
 	return nil
@@ -82,7 +81,7 @@ func Migrate(db *sql.DB, migrationsDir string) error {
 		return fmt.Errorf("failed to check if failed migration exists: %w", err)
 	}
 	if failedMigrationExists {
-		return fmt.Errorf("Cannot proceed, there is at least one failed migration")
+		return fmt.Errorf("cannot proceed, there is at least one failed migration")
 	}
 
 	lastSuccessfulMigrationFile, err := getLastSuccessfulMigrationFile(db)
@@ -136,15 +135,7 @@ func Migrate(db *sql.DB, migrationsDir string) error {
 			if err := executeAndRecordMigration(db, tx, installedRank, filename, statements); err != nil {
 				return err
 			}
-
-			if err := tx.Commit(); err != nil {
-				return fmt.Errorf("failed to commit transaction: %w", err)
-			}
 		}
-	}
-
-	if err := db.Close(); err != nil {
-		return fmt.Errorf("failed to close database: %w", err)
 	}
 
 	return nil
@@ -157,7 +148,6 @@ func getExecutedMigrations(db *sql.DB) (map[string]bool, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 	for rows.Next() {
 		var filename string
 		if err := rows.Scan(&filename); err != nil {
@@ -172,7 +162,7 @@ func getExecutedMigrations(db *sql.DB) (map[string]bool, error) {
 func getLastSuccessfulMigrationFile(db *sql.DB) (string, error) {
 	var lastSuccessfulMigrationFile string
 	err := db.QueryRow(`SELECT filename FROM ` + migrationHistoryTable + ` WHERE success = TRUE ORDER BY installed_rank DESC LIMIT 1`).Scan(&lastSuccessfulMigrationFile)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return "", err
 	}
 	return lastSuccessfulMigrationFile, nil
@@ -191,23 +181,33 @@ func executeAndRecordMigration(db *sql.DB, tx *sql.Tx, installedRank int, filena
 
 		_, err := tx.Exec(statement)
 		if err != nil {
-			tx.Rollback()
+			e := tx.Rollback()
+			if e != nil {
+				return fmt.Errorf("failed to rollback transaction error: %w original error: %w", e, err)
+			}
 
 			success = false
-			recordMigration(db, installedRank, filename, startTime, success)
+			tx, e = db.Begin()
+			if e != nil {
+				return fmt.Errorf("failed to begin error record transaction error: %w original error: %w", e, err)
+			}
+			e = recordMigration(tx, installedRank, filename, startTime, success)
+			if e != nil {
+				return fmt.Errorf("failed to record migration error: %w original error: %w", e, err)
+			}
 			return fmt.Errorf("failed to execute filename: %s, statement: %s, error: %w", filename, statement, err)
 		}
 	}
 
 	success = true
-	return recordMigration(db, installedRank, filename, startTime, success)
+	return recordMigration(tx, installedRank, filename, startTime, success)
 }
 
 // recordMigration records the migration in the history table
-func recordMigration(db *sql.DB, installedRank int, filename string, startTime time.Time, success bool) error {
+func recordMigration(tx *sql.Tx, installedRank int, filename string, startTime time.Time, success bool) error {
 	executionTime := time.Since(startTime).Milliseconds()
-	_, err := db.Exec(`
-		INSERT INTO `+historyTableName+` (
+	_, err := tx.Exec(`
+		INSERT INTO `+migrationHistoryTable+` (
 			installed_rank, 
 			filename, 
 			installed_on, 
@@ -215,9 +215,13 @@ func recordMigration(db *sql.DB, installedRank int, filename string, startTime t
 			success
 		) VALUES (?, ?, ?, ?, ?)
 	`, installedRank, filename, startTime, executionTime, success)
-
 	if err != nil {
 		return fmt.Errorf("failed to record migration in history table, error: %w, filename: %s", err, filename)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	return nil
 }
