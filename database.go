@@ -68,3 +68,8 @@ func ConnectDB(config DBConfig) (*sql.DB, error) {
 
 	return db, nil
 }
+
+// CloseDB closes the database connection
+func CloseDB(db *sql.DB) error {
+	return db.Close()
+}
