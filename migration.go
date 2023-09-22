@@ -138,10 +138,6 @@ func Migrate(db *sql.DB, migrationsDir string) error {
 		}
 	}
 
-	if err := db.Close(); err != nil {
-		return fmt.Errorf("failed to close database: %w", err)
-	}
-
 	return nil
 }
 
