@@ -20,15 +20,23 @@ Note: Please write your migration files in SQL format.
 By emphasizing SQL-based migration files, GoSMM aims to provide a straightforward and consistent approach to database migration tasks.
 
 ## Installation
+### As a Library
 To get started, you can install `GoSMM` using go get:
     
     ```bash
-    go get github.com/k1e1n04/gosmm
+    go get github.com/k1e1n04/gosmm@latest
     ```
 
+## As a Command-line Tool
+You can also install the `GoSMM` command-line tool with the following:
+    
+    ```bash
+    go install github.com/k1e1n04/gosmm/cmd/gosmm@latest
+    ```
 
 ## Usage
-### Configuration
+### As a Library
+#### Configuration
     ```go
     config := gosmm.DBConfig{
         Driver:        os.Getenv("DB_DRIVER"),
@@ -40,7 +48,7 @@ To get started, you can install `GoSMM` using go get:
     }
     ```
 
-### Fields:
+#### Fields:
 - `Driver`: Database driver ("postgres", "mysql", or "sqlite3").
 - `Host`: Hostname of your database.
 - `Port`: Port number for the database.
@@ -48,7 +56,7 @@ To get started, you can install `GoSMM` using go get:
 - `Password`: Password for the database.
 - `DBName`: The name of the database.
 
-### Performing Migrations
+#### Performing Migrations
 To perform migrations, use the Migrate function:
 
     ```go
@@ -74,6 +82,51 @@ This will:
 4. Execute pending migrations.
 5. Record migration history.
 6. Close the database connection.
+
+### As a Command-line Tool
+#### Configuration
+The CLI tool uses environment variables for configuration. You can either use `export` to set them or place them in a `.env` file.
+
+Here's a list of required environment variables for the CLI:
+
+- `GOSMM_DRIVER`: Database driver ("postgres", "mysql", or "sqlite3").
+- `GOSMM_HOST`: Hostname of your database.
+- `GOSMM_PORT`: Port number for the database.
+- `GOSMM_USER`: Username for the database.
+- `GOSMM_PASSWORD`: Password for the database.
+- `GOSMM_DBNAME`: The name of the database.
+- `GOSMM_MIGRATIONS_DIR` (Optional): The directory containing your SQL migration files. By default, this is set to `./migrations` in your project's root directory.
+
+Using `export`
+    
+        ```bash
+        export GOSMM_DRIVER=postgres
+        export GOSMM_HOST=localhost
+        export GOSMM_PORT=5432
+        export GOSMM_USER=postgres
+        export GOSMM_PASSWORD=password
+        export GOSMM_DBNAME=gosmm
+        export GOSMM_MIGRATIONS_DIR=./migrations
+        ```
+
+Using `.env` file
+Create a `.env` file and fill it like this:
+    
+        ```bash
+        GOSMM_DRIVER=postgres
+        GOSMM_HOST=localhost
+        GOSMM_PORT=5432
+        GOSMM_USER=postgres
+        GOSMM_PASSWORD=password
+        GOSMM_DBNAME=gosmm
+        GOSMM_MIGRATIONS_DIR=./migrations
+        ```
+
+#### Command-line Commands
+- `gosmm status`: Provides the current status of all database migrations.
+- `gosmm migrate`: Runs all pending database migrations.
+- `gosmm restore`: Cleans up any failed migration states by removing them from the migration history table.
+
 
 ## Migration History Table
 `GoSMM` will create a migration history table in your database to keep track of which migrations have been executed. The table will be named `gosmm_migration_history` and will have the following schema:
