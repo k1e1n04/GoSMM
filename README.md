@@ -23,30 +23,30 @@ By emphasizing SQL-based migration files, GoSMM aims to provide a straightforwar
 ### As a Library
 To get started, you can install `GoSMM` using go get:
     
-    ```bash
-    go get github.com/k1e1n04/gosmm@latest
-    ```
+```bash
+go get github.com/k1e1n04/gosmm@latest
+```
 
 ## As a Command-line Tool
 You can also install the `GoSMM` command-line tool with the following:
     
-    ```bash
-    go install github.com/k1e1n04/gosmm/cmd/gosmm@latest
-    ```
+```bash
+go install github.com/k1e1n04/gosmm/cmd/gosmm@latest
+```
 
 ## Usage
 ### As a Library
 #### Configuration
-    ```go
-    config := gosmm.DBConfig{
-        Driver:        os.Getenv("DB_DRIVER"),
-        Host:          os.Getenv("DB_HOST"),
-        Port:          os.Getenv("DB_PORT"),
-        User:          os.Getenv("DB_USER"),
-        Password:      os.Getenv("DB_PASSWORD"),
-        DBName:        os.Getenv("DB_NAME"),
-    }
-    ```
+```go
+config := gosmm.DBConfig{
+    Driver:        os.Getenv("DB_DRIVER"),
+    Host:          os.Getenv("DB_HOST"),
+    Port:          os.Getenv("DB_PORT"),
+    User:          os.Getenv("DB_USER"),
+    Password:      os.Getenv("DB_PASSWORD"),
+    DBName:        os.Getenv("DB_NAME"),
+}
+```
 
 #### Fields:
 - `Driver`: Database driver ("postgres", "mysql", or "sqlite3").
@@ -59,20 +59,20 @@ You can also install the `GoSMM` command-line tool with the following:
 #### Performing Migrations
 To perform migrations, use the Migrate function:
 
-    ```go
-    db, err := gosmm.ConnectDB(config)
-    if err != nil {
-        log.Fatalf("Connection failed: %v", err)
-    }
-    err := gosmm.Migrate(db, os.Getenv("MIGRATIONS_DIR"))
-    if err != nil {
-        log.Fatalf("Migration failed: %v", err)
-    }
-    err := gosmm.CloseDB(db)
-    if err != nil {
-        log.Fatalf("Connection failed: %v", err)
-    }
-    ```
+```go
+db, err := gosmm.ConnectDB(config)
+if err != nil {
+    log.Fatalf("Connection failed: %v", err)
+}
+err := gosmm.Migrate(db, os.Getenv("MIGRATIONS_DIR"))
+if err != nil {
+    log.Fatalf("Migration failed: %v", err)
+}
+err := gosmm.CloseDB(db)
+if err != nil {
+    log.Fatalf("Connection failed: %v", err)
+}
+```
 
 This will:
 
@@ -99,28 +99,28 @@ Here's a list of required environment variables for the CLI:
 
 Using `export`
     
-        ```bash
-        export GOSMM_DRIVER=postgres
-        export GOSMM_HOST=localhost
-        export GOSMM_PORT=5432
-        export GOSMM_USER=postgres
-        export GOSMM_PASSWORD=password
-        export GOSMM_DBNAME=gosmm
-        export GOSMM_MIGRATIONS_DIR=./migrations
-        ```
+```bash
+export GOSMM_DRIVER=postgres
+export GOSMM_HOST=localhost
+export GOSMM_PORT=5432
+export GOSMM_USER=postgres
+export GOSMM_PASSWORD=password
+export GOSMM_DBNAME=gosmm
+export GOSMM_MIGRATIONS_DIR=./migrations
+```
 
 Using `.env` file
 Create a `.env` file and fill it like this:
     
-        ```bash
-        GOSMM_DRIVER=postgres
-        GOSMM_HOST=localhost
-        GOSMM_PORT=5432
-        GOSMM_USER=postgres
-        GOSMM_PASSWORD=password
-        GOSMM_DBNAME=gosmm
-        GOSMM_MIGRATIONS_DIR=./migrations
-        ```
+```bash
+GOSMM_DRIVER=postgres
+GOSMM_HOST=localhost
+GOSMM_PORT=5432
+GOSMM_USER=postgres
+GOSMM_PASSWORD=password
+GOSMM_DBNAME=gosmm
+GOSMM_MIGRATIONS_DIR=./migrations
+```
 
 #### Command-line Commands
 - `gosmm status`: Provides the current status of all database migrations.
