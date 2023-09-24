@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/k1e1n04/gosmm/pkg/gosmm"
@@ -47,6 +48,12 @@ func main() {
 
 	command := os.Args[1]
 
+	if err := executeCommand(db, command); err != nil {
+		log.Fatalf("Command failed: %v", err)
+	}
+}
+
+func executeCommand(db *sql.DB, command string) error {
 	switch command {
 	case "status":
 		if err := gosmm.DisplayStatus(db); err != nil {
@@ -73,4 +80,6 @@ func main() {
 	default:
 		fmt.Println("Unknown command:", command)
 	}
+
+	return nil
 }
