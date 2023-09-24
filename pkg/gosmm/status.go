@@ -7,6 +7,9 @@ import (
 
 // DisplayStatus displays the migration status
 func DisplayStatus(db *sql.DB) error {
+	// Create history table if it doesn't exist
+	err := createHistoryTable(db)
+
 	// SQL query to fetch migration statuses from the migration history table
 	rows, err := db.Query("SELECT installed_rank, filename, installed_on, execution_time, success FROM gosmm_migration_history ORDER BY installed_rank ASC")
 	if err != nil {
@@ -20,8 +23,6 @@ func DisplayStatus(db *sql.DB) error {
 
 	// Loop through each row in the result set
 	for rows.Next() {
-		// Create history table if it doesn't exist
-		err := createHistoryTable(db)
 		if err != nil {
 			fmt.Printf("Error creating history table: %v\n", err)
 			return fmt.Errorf("failed to create history table: %w", err)

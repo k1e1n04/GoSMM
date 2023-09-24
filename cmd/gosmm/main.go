@@ -50,7 +50,7 @@ func main() {
 	switch command {
 	case "status":
 		if err := gosmm.DisplayStatus(db); err != nil {
-			log.Fatalf("Restore failed: %v", err)
+			log.Fatalf("Status check failed: %v", err)
 		}
 
 	case "migrate":
