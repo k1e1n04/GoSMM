@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/joho/godotenv"
 	"github.com/k1e1n04/gosmm/pkg/gosmm"
 	"log"
 	"os"
@@ -18,6 +19,11 @@ func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: gosmm <command>")
 		os.Exit(1)
+	}
+
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Printf("Warning: Could not load .env file. If this is a production environment, ensure environment variables are set appropriately.")
 	}
 
 	port, err := strconv.Atoi(os.Getenv("GOSMM_PORT"))
