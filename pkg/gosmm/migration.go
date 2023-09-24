@@ -200,7 +200,12 @@ func executeAndRecordMigration(db *sql.DB, tx *sql.Tx, installedRank int, filena
 	}
 
 	success = true
-	return recordMigration(tx, installedRank, filename, startTime, success)
+	err := recordMigration(tx, installedRank, filename, startTime, success)
+	if err != nil {
+		return fmt.Errorf("failed to record migration error: %w", err)
+	}
+	fmt.Printf("OK    %s\n", filename)
+	return nil
 }
 
 // recordMigration records the migration in the history table
