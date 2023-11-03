@@ -35,7 +35,7 @@ func TestExecuteStatusCommand(t *testing.T) {
 	os.Stdout = w
 
 	// Test the "status" command
-	err := executeCommand(db, "status")
+	err := executeCommand(db, "status", "sqlite3")
 	assert.NoError(t, err)
 
 	// Restore stdout
@@ -63,7 +63,7 @@ func TestExecuteRestoreCommand(t *testing.T) {
 	os.Stdout = w
 
 	// Test the "restore" command
-	err := executeCommand(db, "restore")
+	err := executeCommand(db, "restore", "sqlite3")
 	assert.NoError(t, err)
 
 	// Restore stdout
@@ -102,7 +102,7 @@ func TestExecuteMigrateCommand(t *testing.T) {
 	os.Stdout = w
 
 	// Test the "migrate" command
-	err := executeCommand(db, "migrate")
+	err := executeCommand(db, "migrate", "sqlite3")
 	assert.NoError(t, err)
 
 	// Restore stdout
@@ -130,7 +130,7 @@ func TestExecuteUnknownCommand(t *testing.T) {
 	os.Stdout = w
 
 	// Test an unknown command
-	err := executeCommand(db, "unknown")
+	err := executeCommand(db, "unknown", "sqlite3")
 	assert.NoError(t, err)
 
 	// Restore stdout

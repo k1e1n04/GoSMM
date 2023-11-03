@@ -62,7 +62,7 @@ func checkMigrationIntegrity(db *sql.DB, migrationsDir string) error {
 }
 
 // Migrate executes the SQL migrations in the given directory
-func Migrate(db *sql.DB, migrationsDir string) error {
+func Migrate(db *sql.DB, migrationsDir string, driver string) error {
 	if err := createHistoryTable(db); err != nil {
 		return fmt.Errorf("failed to create history table: %w", err)
 	}
@@ -132,7 +132,7 @@ func Migrate(db *sql.DB, migrationsDir string) error {
 
 			statements := strings.Split(string(data), ";")
 
-			if err := executeAndRecordMigration(db, tx, installedRank, filename, statements); err != nil {
+			if err := executeAndRecordMigration(db, tx, installedRank, filename, statements, driver); err != nil {
 				return err
 			}
 		}
@@ -169,7 +169,7 @@ func getLastSuccessfulMigrationFile(db *sql.DB) (string, error) {
 }
 
 // executeAndRecordMigration executes the migration and records it in the history table
-func executeAndRecordMigration(db *sql.DB, tx *sql.Tx, installedRank int, filename string, statements []string) error {
+func executeAndRecordMigration(db *sql.DB, tx *sql.Tx, installedRank int, filename string, statements []string, driver string) error {
 	startTime := time.Now()
 	var success bool
 
@@ -191,7 +191,7 @@ func executeAndRecordMigration(db *sql.DB, tx *sql.Tx, installedRank int, filena
 			if e != nil {
 				return fmt.Errorf("failed to begin error record transaction error: %w original error: %w", e, err)
 			}
-			e = recordMigration(tx, installedRank, filename, startTime, success)
+			e = recordMigration(tx, installedRank, filename, startTime, success, driver)
 			if e != nil {
 				return fmt.Errorf("failed to record migration error: %w original error: %w", e, err)
 			}
@@ -200,7 +200,7 @@ func executeAndRecordMigration(db *sql.DB, tx *sql.Tx, installedRank int, filena
 	}
 
 	success = true
-	err := recordMigration(tx, installedRank, filename, startTime, success)
+	err := recordMigration(tx, installedRank, filename, startTime, success, driver)
 	if err != nil {
 		return fmt.Errorf("failed to record migration error: %w", err)
 	}
@@ -209,23 +209,49 @@ func executeAndRecordMigration(db *sql.DB, tx *sql.Tx, installedRank int, filena
 }
 
 // recordMigration records the migration in the history table
-func recordMigration(tx *sql.Tx, installedRank int, filename string, startTime time.Time, success bool) error {
+func recordMigration(tx *sql.Tx, installedRank int, filename string, startTime time.Time, success bool, driver string) error {
 	executionTime := time.Since(startTime).Milliseconds()
-	_, err := tx.Exec(`
-		INSERT INTO `+migrationHistoryTable+` (
-			installed_rank, 
-			filename, 
-			installed_on, 
-			execution_time, 
-			success
-		) VALUES (?, ?, ?, ?, ?)
-	`, installedRank, filename, startTime, executionTime, success)
+
+	// プレースホルダをセットするSQLコマンドを生成
+	var sqlCmd string
+	switch driver {
+	case "postgres":
+		sqlCmd = `
+			INSERT INTO ` + migrationHistoryTable + ` (
+				installed_rank, 
+				filename, 
+				installed_on, 
+				execution_time, 
+				success
+			) VALUES ($1, $2, $3, $4, $5)
+		`
+	case "mysql", "sqlite3":
+		sqlCmd = `
+			INSERT INTO ` + migrationHistoryTable + ` (
+				installed_rank, 
+				filename, 
+				installed_on, 
+				execution_time, 
+				success
+			) VALUES (?, ?, ?, ?, ?)
+		`
+	default:
+		return fmt.Errorf("unsupported driver: %s", driver)
+	}
+
+	// プレースホルダを使ってSQLコマンドを実行
+	_, err := tx.Exec(sqlCmd, installedRank, filename, startTime, executionTime, success)
 	if err != nil {
 		return fmt.Errorf("failed to record migration in history table, error: %w, filename: %s", err, filename)
 	}
 
+	// トランザクションをコミット
 	err = tx.Commit()
 	if err != nil {
+		// コミットに失敗した場合はロールバック
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return fmt.Errorf("failed to commit transaction: %w, and failed to rollback: %v", err, rbErr)
+		}
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	return nil

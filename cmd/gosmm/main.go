@@ -32,8 +32,10 @@ func main() {
 		log.Fatalf("Invalid port: %v", err)
 	}
 
+	driver := os.Getenv("GOSMM_DRIVER")
+
 	config := gosmm.DBConfig{
-		Driver:   os.Getenv("GOSMM_DRIVER"),
+		Driver:   driver,
 		Host:     os.Getenv("GOSMM_HOST"),
 		Port:     port,
 		User:     os.Getenv("GOSMM_USER"),
@@ -48,12 +50,12 @@ func main() {
 
 	command := os.Args[1]
 
-	if err := executeCommand(db, command); err != nil {
+	if err := executeCommand(db, command, driver); err != nil {
 		log.Fatalf("Command failed: %v", err)
 	}
 }
 
-func executeCommand(db *sql.DB, command string) error {
+func executeCommand(db *sql.DB, command string, driver string) error {
 	switch command {
 	case "status":
 		if err := gosmm.DisplayStatus(db); err != nil {
@@ -67,7 +69,7 @@ func executeCommand(db *sql.DB, command string) error {
 			migrationsDir = defaultMigrationsDir
 		}
 		// Perform database migration
-		if err := gosmm.Migrate(db, migrationsDir); err != nil {
+		if err := gosmm.Migrate(db, migrationsDir, driver); err != nil {
 			log.Fatalf("Migration failed: %v", err)
 		}
 		fmt.Println("Migration completed successfully.")

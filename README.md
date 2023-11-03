@@ -38,10 +38,12 @@ go install github.com/k1e1n04/gosmm/cmd/gosmm@latest
 ### As a Library
 #### Configuration
 ```go
+driver := os.Getenv("DB_DRIVER")
 config := gosmm.DBConfig{
-    Driver:        os.Getenv("DB_DRIVER"),
+    Driver:        driver,
     Host:          os.Getenv("DB_HOST"),
-    Port:          os.Getenv("DB_PORT"),
+	// Port is an int
+    Port:          port,
     User:          os.Getenv("DB_USER"),
     Password:      os.Getenv("DB_PASSWORD"),
     DBName:        os.Getenv("DB_NAME"),
@@ -64,11 +66,11 @@ db, err := gosmm.ConnectDB(config)
 if err != nil {
     log.Fatalf("Connection failed: %v", err)
 }
-err := gosmm.Migrate(db, os.Getenv("MIGRATIONS_DIR"))
+err = gosmm.Migrate(db, os.Getenv("MIGRATIONS_DIR"), driver)
 if err != nil {
     log.Fatalf("Migration failed: %v", err)
 }
-err := gosmm.CloseDB(db)
+err = gosmm.CloseDB(db)
 if err != nil {
     log.Fatalf("Connection failed: %v", err)
 }

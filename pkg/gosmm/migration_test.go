@@ -163,7 +163,7 @@ func TestMigrateSingleFile(t *testing.T) {
 		t.Fatalf("Failed to create test migration file: %v", err)
 	}
 
-	err := Migrate(db, migrationsDir)
+	err := Migrate(db, migrationsDir, "sqlite3")
 	assert.NoError(t, err)
 
 	// Check test_table exists
@@ -214,7 +214,7 @@ func TestMigrateMultipleFiles(t *testing.T) {
 		t.Fatalf("Failed to create test migration file: %v", err)
 	}
 
-	err := Migrate(db, migrationsDir)
+	err := Migrate(db, migrationsDir, "sqlite3")
 	assert.NoError(t, err)
 
 	// Check test_table exists
@@ -295,7 +295,7 @@ func TestMigrateWithSuccessFlagIsFalse(t *testing.T) {
 		t.Fatalf("Failed to insert gosmm_migration_history entry: %v", err)
 	}
 
-	err = Migrate(db, migrationsDir)
+	err = Migrate(db, migrationsDir, "sqlite3")
 	assert.Error(t, err)
 
 	// Delete the test migration file
@@ -326,7 +326,7 @@ func TestMigrateWithSecondFileHasInvalidSQL(t *testing.T) {
 		t.Fatalf("Failed to create test migration file: %v", err)
 	}
 
-	err := Migrate(db, migrationsDir)
+	err := Migrate(db, migrationsDir, "sqlite3")
 	assert.Error(t, err)
 
 	// Check test_table exists
