@@ -1,4 +1,4 @@
-module github.com/k1e1n04/gosmm
+module github.com/k1e1n04/gosmm/v2
 
 go 1.20
 
